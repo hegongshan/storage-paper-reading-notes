@@ -2,7 +2,7 @@
 
 ### 问题
 
-<img src="./img/nsdi26-falconfs-dl-pipeline.png" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-dl-pipeline.png" style="zoom:50%;display:block;margin:0 auto;" />
 
 在深度学习流水线中，分布式文件系统的客户端元数据缓存是无效的，浪费了宝贵的内存资源。
 
@@ -11,14 +11,14 @@
   * 在每轮训练中，训练任务会随机遍历数据集中的文件，且每个文件只会被访问一次。
   * 因此，训练任务对缓存大小非常敏感：缓存较小时，缓存不命中会增加查询请求，导致请求放大，降低读取性能；而缓存大量元数据则需要占用大量客户端内存。在VFS中，缓存一个目录的元数据需要占用800 Byte。其中，inode需要占用608 Byte，dentry需要占用192 Byte。
 
-<img src="./img/nsdi26-falconfs-challenge1.png" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-challenge1.png" style="zoom:50%;display:block;margin:0 auto;" />
 
 * **挑战二**：元数据访问倾斜
   * CephFS等DFS采用了基于子树划分的元数据管理方法，通常会将同一目录下的文件元数据存储在一起。
   * 在标注阶段中，推理任务会依次扫描每个目录，并访问目录中的所有文件。
   * 因此，这种逐目录的I/O模式会造成临时的元数据访问倾斜。
 
-<img src="./img/nsdi26-falconfs-challenge2.png" style="zoom:50%;" />
+<img src="./img/nsdi26-falconfs-challenge2.png" style="zoom:50%;display:block;" />
 
 其中，`burst size`是指目录内包含的文件数量。
 
@@ -26,17 +26,17 @@
 
 FalconFS提出了**无状态客户端架构（stateless-client architecture）**，抛弃了客户端缓存，并将路径解析卸载到服务端中，为大部分操作提供了一跳访问。
 
-<img src="./img/nsdi26-falconfs-architecture.png" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-architecture.png" style="zoom:50%;display:block;margin:0 auto;" />
 
 * 为了找到存储文件inode的元数据节点，FalconFS提出了混合元数据索引方法，将文件元数据（inode）分散存储在所有MNode中。
 
-* 为了在元数据节点本地执行路径解析，FalconFS提出在所有MNode中复制整个命名空间（dentry）。
+* 为了让元数据节点在本地执行路径解析，FalconFS提出在所有MNode中复制整个命名空间（dentry）。
 
-<img src="./img/nsdi26-falconfs-metadata-scheme.png" style="margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-metadata-scheme.png" style="display:block;margin:0 auto;" />
 
 #### 混合元数据索引
 
-<img src="./img/nsdi26-falconfs-hybrid-metadata-indexing.png" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-hybrid-metadata-indexing.png" style="zoom:50%;display:block;margin:0 auto;" />
 
 **方法**：利用文件名哈希，将文件inode放置到对应的元数据服务器上，并使用选择性重定向来实现负载均衡。
 
@@ -56,7 +56,7 @@ FalconFS提出了**无状态客户端架构（stateless-client architecture）**
 
 #### 延迟命名空间复制
 
-<img src="./img/nsdi26-falconfs-namespace-synchronization.png" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-namespace-synchronization.png" style="zoom:50%;display:block;margin:0 auto;" />
 
 **方法**：采用**延迟同步**和**无效机制**来降低维护开销。
 
@@ -76,7 +76,7 @@ FalconFS提出了**无状态客户端架构（stateless-client architecture）**
 
 每个元数据服务器会初始化固定数量的数据库工作线程，并准备好一个连接池。根据请求类型不同，连接池会将请求放到对应的请求队列中。空闲工作线程检索队列，并在一次事务中执行队列中的所有请求。
 
-<img src="./img/nsdi26-falconfs-concurrent-request-merging-overview.png" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-concurrent-request-merging-overview.png" style="zoom:50%;display:block;margin:0 auto;" />
 
 * **锁合并**：工作者线程以批为粒度来组合锁获取和释放操作。图8中有三个`create`操作，每个操作需要遍历2个目录和1个文件。单独执行这些操作需要获取9次锁，而消除冗余锁获取后，FalconFS只需要获取6次锁（`/`、`b`、`e`、`a`、`d`、`c`）。
 * **预写日志合并**：由于多个操作可以在一次事务中批量执行，工作者线程可以将多个小的日志追加操作合并为一个更大的日志追加操作。
@@ -85,7 +85,7 @@ FalconFS提出了**无状态客户端架构（stateless-client architecture）**
 
 * **方法**：当VFS对中间目录执行lookup操作时，VFS shortcut将会返回假的目录属性（带有特殊的uid和gid，权限为0777），以通过VFS检查。而当VFS对路径的最后部分执行lookup操作时，客户端模块则将完整的路径发送给元数据服务器，由元数据服务器执行实际的路径解析等操作。
 
-<img src="./img/nsdi26-falconfs-vfs-shortcut.png" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-vfs-shortcut.png" style="zoom:50%;display:block;margin:0 auto;" />
 
 * **区分中间路径和最后路径的查询请求**：从Linux 5.7开始，在路径游走时，VFS会设置状态位`LOOKUP_PARENT`，并将其传递给lookup()方法，用以表明尚未到达路径的最后部分。如果设置了该状态位，客户端模块则知道该查询是针对中间目录的，从而返回假属性。
 
@@ -103,7 +103,7 @@ FalconFS提出了**无状态客户端架构（stateless-client architecture）**
 
 * 实验结果
 
-<img src="./img/nsdi26-falconfs-end-to-end-performance-for-labeling-task.png" alt="标注任务性能" style="zoom:50%;margin:0 auto;" />
+<img src="./img/nsdi26-falconfs-end-to-end-performance-for-labeling-task.png" alt="标注任务性能" style="zoom:50%;display:block;margin:0 auto;" />
 
 <img src="./img/nsdi26-falconfs-end-to-end-performance-for-model-training.png" alt="ResNet-50模型训练性能" style="zoom:50%;" />
 
