@@ -18,9 +18,9 @@
   * 在标注阶段中，推理任务会依次扫描每个目录，并访问目录中的所有文件。
   * 因此，这种逐目录的I/O模式会造成临时的元数据访问倾斜。
 
-<img src="./img/nsdi26-falconfs-challenge2.png" style="zoom:50%;display:block;" />
+<img src="./img/nsdi26-falconfs-challenge2.png" style="zoom:50%;display:block;margin:0 auto;" />
 
-其中，`burst size`是指目录内包含的文件数量。
+其中，`burst size`是指同一目录内被访问的文件数量。
 
 ### 方法
 
@@ -74,7 +74,7 @@ FalconFS提出了**无状态客户端架构（stateless-client architecture）**
 
 #### 并发请求合并
 
-每个元数据服务器会初始化固定数量的数据库工作线程，并准备好一个连接池。根据请求类型不同，连接池会将请求放到对应的请求队列中。空闲工作线程检索队列，并在一次事务中执行队列中的所有请求。
+**方法**：每个元数据服务器会初始化固定数量的数据库工作线程，并准备好一个连接池。根据请求类型不同，连接池会将请求放到对应的请求队列中。空闲工作线程检索队列，并在一次事务中执行队列中的所有请求。
 
 <img src="./img/nsdi26-falconfs-concurrent-request-merging-overview.png" style="zoom:50%;display:block;margin:0 auto;" />
 
@@ -83,7 +83,7 @@ FalconFS提出了**无状态客户端架构（stateless-client architecture）**
 
 #### VFS Shortcut
 
-* **方法**：当VFS对中间目录执行lookup操作时，VFS shortcut将会返回假的目录属性（带有特殊的uid和gid，权限为0777），以通过VFS检查。而当VFS对路径的最后部分执行lookup操作时，客户端模块则将完整的路径发送给元数据服务器，由元数据服务器执行实际的路径解析等操作。
+**方法**：当VFS对中间目录执行lookup操作时，VFS shortcut将会返回假的目录属性（带有特殊的uid和gid，权限为0777），以通过VFS检查。而当VFS对路径的最后部分执行lookup操作时，客户端模块则将完整的路径发送给元数据服务器，由元数据服务器执行实际的路径解析等操作。
 
 <img src="./img/nsdi26-falconfs-vfs-shortcut.png" style="zoom:50%;display:block;margin:0 auto;" />
 
@@ -105,7 +105,7 @@ FalconFS提出了**无状态客户端架构（stateless-client architecture）**
 
 <img src="./img/nsdi26-falconfs-end-to-end-performance-for-labeling-task.png" alt="标注任务性能" style="zoom:50%;display:block;margin:0 auto;" />
 
-<img src="./img/nsdi26-falconfs-end-to-end-performance-for-model-training.png" alt="ResNet-50模型训练性能" style="zoom:50%;" />
+<img src="./img/nsdi26-falconfs-end-to-end-performance-for-model-training.png" alt="ResNet-50模型训练性能" style="zoom:50%;display:block;margin:0 auto;" />
 
 ### 总结
 
